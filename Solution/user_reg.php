@@ -10,8 +10,8 @@ require_once 'common_functions.php';  // include the main functions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {  // if it's a post method
     // used to check correct format of email address
     if (only_user(dbconnect(),$_POST['email'])) {  //calls function to check password complexity
-        $_SESSION['ERROR'] = "Cannot use that email";
-        header("Location: user_reg.php");
+        $_SESSION['ERROR'] = "Cannot use that email, already registered";
+        header("Location: login.php");
         exit; // Stop further execution
     }
     elseif (!pwrd_checker($_POST['password'], $_POST['cpassword'])) {  //calls function to check password complexity
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {  // if it's a post method
         try {
             if(reg_user(dbconnect(),$_POST)) { // Assuming $conn is your database connection
                 $_SESSION['SUCCESS'] = $_POST['email']." USER REGISTERED";
-                header("Location: user_login.php");
+                header("Location: login.php");
                 exit; // Stop further execution
             } else {
                 $_SESSION['ERROR'] = "ADD USER FAIL, UNKNOWN ERROR";
@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {  // if it's a post method
         }
         catch(Exception $e) {
             // Handle database error within reg_admin or here.
-            $_SESSION['ERROR'] = "SUPER REG ERROR: ". $e->getMessage();
-            header("Location: admin_index.php");
+            $_SESSION['ERROR'] = "USER REG ERROR: ". $e->getMessage();
+            header("Location: index.php");
             exit; // Stop further execution
         }
     }
@@ -75,27 +75,25 @@ else {
 
     echo "<form method='post' action='user_reg.php'>";
 
-    echo "<input type='text' name='username' placeholder='Username' required><br>";
-
-    echo "<input type='password' name='password' placeholder='Password' required><br>";
-
-    echo "<input type='password' name='cpassword' placeholder='Confirm Password' required><br>";
-
     echo "<input type='text' name='fname' placeholder='First Name' required><br>";
 
     echo "<input type='text' name='sname' placeholder='Surname' required><br>";
 
+    echo "<input type='text' name='addressln1' placeholder='Address Line 1' required><br>";
 
+    echo "<input type='text' name='addressln2' placeholder='Address Line 2' required><br>";
 
-    echo "<label for='user-type'>Select User Type:</label>";
-    echo "<select name='user_type'>";
-    $user_types = get_user_types(dbconnect_select());
+    echo "<input type='text' name='city' placeholder='City / Town' required><br>";
 
-    foreach ($user_types as $type) {
-        echo "<option value=".$type['user_type_id'].">".$type['type']."</option>";
-    }
+    echo "<input type='text' name='postcode' placeholder='Post Code' required><br>";
 
-    echo "</select><br>";
+    echo "<input type='text' name='phone' placeholder='Phone Number' required><br>";
+
+    echo "<input type='text' name='email' placeholder='E-Mail Address' required><br>";
+
+    echo "<input type='password' name='password' placeholder='Password' required><br>";
+
+    echo "<input type='password' name='cpassword' placeholder='Confirm Password' required><br>";
 
     echo "<input type='submit' name='submit' value='Register'>";
 

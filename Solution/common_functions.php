@@ -55,23 +55,30 @@ function only_user($conn, $username){
 }
 
 function reg_user($conn,$post){
-    if (!isset($post['email'], $post['password'], $post['f_name'], $post['s_name'], $post['user_type'])) {
+    if (!isset($post['email'], $post['password'], $post['fname'], $post['sname'])) {
         throw new Exception("Missing required fields.");
     } else{
         try {
             // Prepare and execute the SQL query
-            $sql = "INSERT INTO user (username, password, f_name, s_name, signupdate, user_type_id) VALUES (?, ?, ?, ?, ?, ?)";  //prepare the sql to be sent
+            $sql = "INSERT INTO user (f_name, s_name, addressln1, addressln2, city, postcode, email, phone, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";  //prepare the sql to be sent
             $stmt = $conn->prepare($sql); //prepare to sql
 
-            $stmt->bindParam(1, $post['username']);  //bind parameters for security
+            $stmt->bindParam(1, $post['fname']);  //bind parameters for security
+            $stmt->bindParam(2, $post['sname']);  //bind parameters for security
+            $stmt->bindParam(3, $post['addressln1']);  //bind parameters for security
+            if(!isset($post['addressln2'])){
+                $stmt->bindParam(4, " ");
+            } else {
+                $stmt->bindParam(4, $post['addressln2']);  //bind parameters for security
+            }
+            $stmt->bindParam(5, $post['city']);  //bind parameters for security
+            $stmt->bindParam(6, $post['postcode']);  //bind parameters for security
+            $stmt->bindParam(7, $post['email']);  //bind parameters for security
+            $stmt->bindParam(8, $post['phone']);  //bind parameters for security
+
             // Hash the password
             $hpswd = password_hash($post['password'], PASSWORD_DEFAULT);  //has the password
-            $stmt->bindParam(2, $hpswd);
-            $stmt->bindParam(3, $post['fname']);
-            $stmt->bindParam(4, $post['sname']);
-            $signup_date = time();
-            $stmt->bindParam(5, $signup_date);
-            $stmt->bindParam(6, $post['user_type']);
+            $stmt->bindParam(9, $hpswd);
 
             $stmt->execute();  //run the query to insert
             $conn = null;  // closes the connection so cant be abused.
@@ -86,5 +93,17 @@ function reg_user($conn,$post){
             throw new Exception("User Registration error: " . $e->getMessage()); //Throw exception for calling script to handle.
         }
     }
+
+}
+
+function validlogin($conn, $email){
+
+    $sql = "SELECT * FROM user WHERE email = ?"; //set up the sql statement
+    $stmt = $conn->prepare($sql); //prepares
+    $stmt->bindParam(1,$email);  //binds the parameters to execute
+    $stmt->execute(); //run the sql code
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
+    $conn = null;  // nulls off the connection so cant be abused.
+
 
 }
