@@ -4,7 +4,7 @@ session_start();
 require_once 'db_connect.php';
 require_once 'common_functions.php';
 
-if (isset($_SESSION['user_ssnlogin'])){
+if (isset($_SESSION['user_id'])){
     $_SESSION['ERROR'] = "You are already logged in!";
     header("Location: index.php");
     exit; // Stop further execution
@@ -13,36 +13,31 @@ if (isset($_SESSION['user_ssnlogin'])){
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST'){  // if superuser doesn't exist and posted to this page
     try {  //try this code, catch errors
 
+        if(validlogin(dbconnect(),$_POST['email'])){  // if there is a result returned
 
-
-
-        if(validlogin(dbconnect(),$_POST)){  // if there is a result returned
-
-            if (password_verify($_POST["password"], $result["password"]) && auditor(dbconnect_insert(), $_POST['username'], $short_code, $long_code)) { // verifies the password is matched
-                $_SESSION["user_ssnlogin"] = true;  // sets up the session variables
-                $_SESSION['user_id'] = get_userid(dbconnect_select(),$_POST);
-                $_SESSION["username"] = $_POST['username'];
-                $_SESSION["user_type_id"] = $result["user_type_id"];
+            if (pswdcheck(dbconnect(), $_POST['email'])) { // verifies the password is matched
+                $_SESSION['user_id'] = get_userid(dbconnect(),$_POST);
+                $_SESSION["email"] = $_POST['email'];
                 $_SESSION['SUCCESS'] = "User Successfully Logged In";
                 header("location:index.php");  //redirect on success
                 exit();
 
             } else{
                 $_SESSION['ERROR'] = "User login passwords not match";
-                header("Location: user_login.php");
+                header("Location: login.php");
                 exit; // Stop further execution
             }
 
         } else {
             $_SESSION['ERROR'] = "User not found";
-            header("Location: user_login.php");
+            header("Location: login.php");
             exit; // Stop further execution
 
         }
 
     } catch (Exception $e) {
         $_SESSION['ERROR'] = "User login".$e->getMessage();
-        header("Location: user_login.php");
+        header("Location: login.php");
         exit; // Stop further execution
     }
 }
@@ -56,7 +51,7 @@ else {
 
     echo "<link rel='stylesheet' href='styles.css'>";
 
-    echo "<title> RZL User Login</title>";
+    echo "<title> User Login</title>";
 
     echo "</head>";
 
@@ -64,11 +59,9 @@ else {
 
     echo "<div id='list container'>";
 
-    echo "<div id='title'>";
+    include_once "title.php";
 
-    echo "<h3 id='banner'>RZL User System</h3>";
-
-    echo "</div>";
+    include 'user_nav.php';
 
     echo "<div id='content'>";
 
@@ -78,9 +71,9 @@ else {
 
     echo usr_error($_SESSION);
 
-    echo "<form method='post' action='user_login.php'>";
+    echo "<form method='post' action='login.php'>";
 
-    echo "<input type='text' name='username' placeholder='Username' required><br>";
+    echo "<input type='text' name='email' placeholder='E-mail' required><br>";
 
     echo "<input type='password' name='password' placeholder='Password' required><br>";
 

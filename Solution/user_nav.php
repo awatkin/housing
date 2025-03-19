@@ -6,7 +6,7 @@ echo " :: ";
 echo "<a href='index.php'> Home </a>";
 
 echo " :: ";
-if (isset($_SESSION["user_ssnlogin"])) {
+if (isset($_SESSION['user_id'])) {
     echo "<a href='logout.php'> Logout </a>";
     echo " :: ";
     echo "<a href='book_appointment.php'> Book Appointment </a>";

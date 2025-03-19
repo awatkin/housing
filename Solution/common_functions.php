@@ -105,5 +105,52 @@ function validlogin($conn, $email){
     $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
     $conn = null;  // nulls off the connection so cant be abused.
 
+    if($result){  // if a user with this email is in there,
+        return true;  // returns true to proceed
+    } else {
+        return false;  // otherwise, if no results, false and error message
+    }
 
+}
+
+function pswdcheck($conn, $email){
+    try {
+        $sql = "SELECT password FROM user WHERE email = ?"; //set up the sql statement
+        $stmt = $conn->prepare($sql); //prepares
+        $stmt->bindParam(1, $email);
+        $stmt->execute(); //run the sql code
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
+        $conn = null;  // securely close off the connection
+
+        if(password_verify($_POST["password"], $result['password'])){
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+    catch (PDOException $e) { //catch error
+        // Log the error (crucial!)
+        error_log("Database error in get_userid function: " . $e->getMessage());
+        // Throw the exception
+        throw $e; // Re-throw the exception
+    }
+}
+
+function get_userid($conn,$post){  // new function to source the userID after registering then store it in the session data
+    try {
+        $sql = "SELECT user_id FROM user WHERE email = ?"; //set up the sql statement
+        $stmt = $conn->prepare($sql); //prepares
+        $stmt->bindParam(1, $post['email']);
+        $stmt->execute(); //run the sql code
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
+        $conn = null;  // securely close off the connection
+        return $result["user_id"];
+    }
+    catch (PDOException $e) { //catch error
+        // Log the error (crucial!)
+        error_log("Database error in get_userid function: " . $e->getMessage());
+        // Throw the exception
+        throw $e; // Re-throw the exception
+    }
 }
