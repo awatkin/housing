@@ -154,3 +154,84 @@ function get_userid($conn,$post){  // new function to source the userID after re
         throw $e; // Re-throw the exception
     }
 }
+
+function get_time($choice){
+    // date time local picker
+    $current_epoch = time();
+
+    if($choice != "current"){  // if they want to add a week to the time for date picker
+        $current_epoch = time() + 604800;
+    }
+// Convert epoch to a DateTime object
+    $datetime = new DateTime("@$current_epoch"); // The "@" symbol is crucial here to tell php its a unix time code
+// Set the desired format for datetime-local
+    $datetime_local_format = $datetime->format('Y-m-d\TH:i');
+
+    return $datetime_local_format;  // return the date to be used
+}
+
+function get_ticket_types($conn){
+    try {
+        $sql = "SELECT t_id, type FROM tickets"; //set up the sql statement
+        $stmt = $conn->prepare($sql); //prepares
+        $stmt->execute(); //run the sql code
+        $result = $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
+
+        return $result;
+    }
+    catch (PDOException $e) { //catch error
+        // Log the error (crucial!)
+        error_log("Database error in get ticket type: " . $e->getMessage());
+        // Throw the exception
+        throw $e; // Re-throw the exception
+    }
+}
+
+function get_appt_staff($conn){
+    try {
+        $sql = "SELECT staff_id, f_name, s_name FROM staff"; //set up the sql statement
+        $stmt = $conn->prepare($sql); //prepares
+        $stmt->execute(); //run the sql code
+        return $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
+
+    }
+    catch (PDOException $e) { //catch error
+        // Log the error (crucial!)
+        error_log("Database error in get ticket type: " . $e->getMessage());
+        // Throw the exception
+        throw $e; // Re-throw the exception
+    }
+}
+
+function valid_appointment($conn,$post){
+    try {
+        $sql = "SELECT * FROM staff WHERE staff_id = ?"; //set up the sql statement
+        $stmt = $conn->prepare($sql); //prepares
+        $stmt->bindParam(1, $post['staff_pick']);
+        $stmt->execute(); //run the sql code
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
+    }
+    catch (PDOException $e) { //catch error
+        // Log the error (crucial!)
+        error_log("Database error in get ticket type: " . $e->getMessage());
+        // Throw the exception
+        throw $e; // Re-throw the exception
+    }
+    if($result['role']!=$post['apt_pick']){ // checks staff role against the desired appointment type
+        return "wrongstaff";
+    } else {
+        try {
+            $sql = "SELECT * FROM booking WHERE staff_id = ?"; //set up the sql statement
+            $stmt = $conn->prepare($sql); //prepares
+            $stmt->bindParam(1, $post['staff_pick']);
+            $stmt->execute(); //run the sql code
+            $result = $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
+        }
+        catch (PDOException $e) { //catch error
+            // Log the error (crucial!)
+            error_log("Database error in get ticket type: " . $e->getMessage());
+            // Throw the exception
+            throw $e; // Re-throw the exception
+        }
+    }
+}
