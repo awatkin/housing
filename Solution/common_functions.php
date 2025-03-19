@@ -14,18 +14,16 @@ function pwrd_checker($pass, $cpass) {  //takes in 2 parameters
     }
 }
 
-function usr_error(&$session){
+function usr_error(){
 
-    if(isset($session['ERROR'])){  // checks for the session variable being set with an error
-        $error = 'ERROR: '. $session['ERROR'];  //echos out the stored error from session
-        $session['ERROR'] = "";
-        unset($session['ERROR']);  //
+    if(isset($_SESSION['ERROR'])){  // checks for the session variable being set with an error
+        $error = 'ERROR: '. $_SESSION['ERROR'];  //echos out the stored error from session
+        unset($_SESSION['ERROR']);  //
         return $error;
     }
-    elseif(isset($session['SUCCESS'])){  // checks for the session variable being set with an error
-        $success = 'SUCCESS: '. $session['SUCCESS'];  //echos out the stored error from session
-        $session['SUCCESS'] = "";
-        unset($session['SUCCESS']);  //
+    elseif(isset($_SESSION['SUCCESS'])){  // checks for the session variable being set with an error
+        $success = 'SUCCESS: '. $_SESSION['SUCCESS'];  //echos out the stored error from session
+        unset($_SESSION['SUCCESS']);  //
         return $success;
     }
     else {
@@ -189,7 +187,7 @@ function get_ticket_types($conn){
 
 function get_appt_staff($conn){
     try {
-        $sql = "SELECT staff_id, f_name, s_name FROM staff"; //set up the sql statement
+        $sql = "SELECT staff_id, f_name, s_name, role FROM staff"; //set up the sql statement
         $stmt = $conn->prepare($sql); //prepares
         $stmt->execute(); //run the sql code
         return $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
@@ -203,13 +201,18 @@ function get_appt_staff($conn){
     }
 }
 
-function valid_appointment($conn,$post){
+function valid_staff($conn,$post){
     try {
         $sql = "SELECT * FROM staff WHERE staff_id = ?"; //set up the sql statement
         $stmt = $conn->prepare($sql); //prepares
         $stmt->bindParam(1, $post['staff_pick']);
         $stmt->execute(); //run the sql code
         $result = $stmt->fetch(PDO::FETCH_ASSOC);  //brings back results
+        if($result['role']!=$post['apt_type']){ // checks staff role against the desired appointment type
+            return false;
+        } else {
+            return true;
+        }
     }
     catch (PDOException $e) { //catch error
         // Log the error (crucial!)
@@ -217,21 +220,132 @@ function valid_appointment($conn,$post){
         // Throw the exception
         throw $e; // Re-throw the exception
     }
-    if($result['role']!=$post['apt_pick']){ // checks staff role against the desired appointment type
-        return "wrongstaff";
-    } else {
+
+}
+
+function valid_appointment($conn,$post){
         try {
             $sql = "SELECT * FROM booking WHERE staff_id = ?"; //set up the sql statement
             $stmt = $conn->prepare($sql); //prepares
             $stmt->bindParam(1, $post['staff_pick']);
             $stmt->execute(); //run the sql code
             $result = $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
+            if(!$result && in_working_week($post['meeting-time'])){  // if no current bookings for this staff
+                return true;  // allow the booking to be made
+            } elseif($result && in_working_week($post['meeting-time'])){
+
+            } else {
+                return false;
+            }
         }
         catch (PDOException $e) { //catch error
             // Log the error (crucial!)
             error_log("Database error in get ticket type: " . $e->getMessage());
             // Throw the exception
             throw $e; // Re-throw the exception
+        }
+}
+
+function in_working_week($datetimeLocalValue) {
+    // Convert datetime-local string to DateTime object
+    $dateTime = DateTime::createFromFormat('Y-m-d\TH:i', $datetimeLocalValue);
+
+    if (!$dateTime) {
+        return false; // Invalid datetime format
+    }
+
+    // Check if it's a weekday (Monday = 1, Sunday = 7)
+    $dayOfWeek = $dateTime->format('N');
+    if ($dayOfWeek >= 6) { // Saturday or Sunday
+        return false; // Not a weekday
+    }
+
+    // Get the date part
+    $date = $dateTime->format('Y-m-d');
+
+    // Create DateTime objects for 8 AM and 4 PM on the same date
+    $startTime = new DateTime("$date 08:00:00");
+    $endTime = new DateTime("$date 16:00:00");
+
+    // Check if the given time is within the range
+    if ($dateTime >= $startTime && $dateTime <= $endTime) {
+        return true; // Within working hours on a weekday
+    } else {
+        return false; // Outside working hours
+    }
+}
+
+
+function commit_booking($conn, $post){
+
+    try {
+        // Prepare and execute the SQL query
+        $sql = "INSERT INTO booking (made_on, consult_date, user_id, staff_id, product) VALUES (?, ?, ?, ?, ?)";  //prepare the sql to be sent
+        $stmt = $conn->prepare($sql); //prepare to sql
+
+        // param 1 is the time right now, when it was made
+        $right_now = time();
+        $stmt->bindParam(1, $right_now);  //bind parameters for security
+
+        // param 2 is taking the chosen time and making it epoch
+        $dateTime = DateTime::createFromFormat('Y-m-d\TH:i', $post['meeting-time']);
+        $epochTime = $dateTime->getTimestamp();
+        $stmt->bindParam(2, $epochTime);  //bind parameters for security
+
+        // param 3 is the userid taken from session data
+        $stmt->bindParam(3, $_SESSION['user_id']);  //bind parameters for security
+
+        // param 4 is the staff id doing the job, taken from post data
+        $stmt->bindParam(4, $post['staff_pick']);  //bind parameters for security
+
+        // param 5 is the product, from the form TO BE MADE - ADD THIS ASAP
+        $stmt->bindValue(5, " Product should be in here, make a form element ");  //bind parameters for security
+
+        $stmt->execute();  //run the query to insert
+        $conn = null;  // closes the connection so cant be abused.
+        return true; // Registration successful
+    }  catch (PDOException $e) {
+        // Handle database errors
+        error_log("Make Booking error: " . $e->getMessage()); // Log the error
+        throw new Exception("Make Booking error". $e); //Throw exception for calling script to handle.
+    } catch (Exception $e) {
+        // Handle validation or other errors
+        error_log("Make Booking error: " . $e->getMessage()); //Log the error
+        throw new Exception("Make Booking error: " . $e->getMessage()); //Throw exception for calling script to handle.
+    }
+}
+
+
+// to be used in version 2 of booking system.
+function appointment_timings($datetimeLocalValue, $epochTimes)
+{
+    // Convert datetime-local to DateTime object
+    $dateTime = DateTime::createFromFormat('Y-m-d\TH:i', $datetimeLocalValue);
+    if (!$dateTime) {
+        return false; // Invalid datetime format
+    }
+
+    // Convert datetime-local to epoch time
+    $localEpoch = $dateTime->getTimestamp();
+
+    // Get the date component from the datetime-local input
+    $localDate = $dateTime->format('Y-m-d');
+
+    $oneHour = 3600; // 60 minutes in seconds
+
+    foreach ($epochTimes as $epochTime) {
+        // Convert epoch time to DateTime object
+        $existingDateTime = new DateTime("@$epochTime");
+
+        // Get the date component from the existing epoch time
+        $existingDate = $existingDateTime->format('Y-m-d');
+
+        // Check if they are on the same day
+        if ($localDate === $existingDate) {
+            // Check if they are less than 60 minutes apart
+            if (abs($localEpoch - $epochTime) < $oneHour) {
+                return false; // Less than 60 minutes apart
+            }
         }
     }
 }

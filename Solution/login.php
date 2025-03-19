@@ -69,7 +69,7 @@ else {
 
     echo "<br>";
 
-    echo usr_error($_SESSION);
+    echo usr_error();
 
     echo "<form method='post' action='login.php'>";
 

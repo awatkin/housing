@@ -5,18 +5,26 @@ session_start();
 require_once "common_functions.php";
 require_once "db_connect.php";
 
-if($_SERVER["REQUEST_METHOD"] == "POST"){
+if(!isset($_SESSION['user_id'])){
+    $_SESSION['ERROR'] = "You are not logged in!";
+    header("Location: login.php");
+}
 
-    foreach($_POST as $bits){
-        echo $bits;
-        echo "<br>";
-    }
-//    $result = valid_appointment(dbconnect(),$_POST);
-//    if($result="wrongstaff"){
-//        $_SESSION['message'] = "That member of staff cannot complete that appointment type";
-//        header("Location: book_appointment.php");
-//        exit;
+if($_SERVER["REQUEST_METHOD"] == "POST") {
+
+//    foreach ($_POST as $bits) {  // temp code block to check form contents
+//        echo $bits;
+//        echo "<br>";
 //    }
+
+    if (valid_staff(dbconnect(), $_POST) && valid_appointment(dbconnect(), $_POST)) {  // checks to see if the staff picked matches the apt type wanted
+        if(commit_booking(dbconnect(), $_POST)){
+            $_SESSION['SUCCESS'] = "Appointment Booked Successfully!";
+            header("Location: book_appointment.php");
+        }
+    } else {
+        echo "<br> date and time is wrong <br>";
+    }
 
 }
 
@@ -42,7 +50,9 @@ echo "<div id='content'>";
 echo "<h4> Book your appointment</h4>";
 
 echo "<br>";
-echo usr_error($_SESSION);
+
+echo usr_error();
+
 echo "<br>";
 
 echo "Choose your booking slot ";
@@ -70,14 +80,14 @@ echo "<select name='staff_pick' required>";
     $staff = get_appt_staff(dbconnect());  // calls function to get the ticket types and their id numbers
 
     foreach ($staff as $type) {  // uses a loop to display them
-        echo "<option value=".$type['staff_id'].">".$type['f_name']." ".$type['s_name']."</option>";  // sets the ticket id as the "value" to be able to use it later, but displays the ticket type text
+        echo "<option value=".$type['staff_id'].">".$type['f_name']." ".$type['s_name']. " - ".$type['role']."</option>";  // sets the ticket id as the "value" to be able to use it later, but displays the ticket type text
     }
     echo "</select>";
 echo "<br>";
 echo "<br>";
 
-echo "<label for='apt_pick'>Choose an appointment type:</label>";
-echo "<select name='apt-pick' required>";
+echo "<label for='apt_type'>Choose an appointment type:</label>";
+echo "<select name='apt_type' required>";
 echo "<option value='INSTALLER'> Installation </option>";
 echo "<option value='CONSULTANT'> Consultation </option>";
 echo "</select>";

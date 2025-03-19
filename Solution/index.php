@@ -26,7 +26,7 @@ echo "<div id='content'>";
 echo "<h4> Hello and Welcome to the EV Website</h4>";
 
 echo "<br>";
-echo usr_error($_SESSION);
+echo usr_error();
 echo "<br>";
 
 echo "Use the links above to complete the tasks needed. ";
