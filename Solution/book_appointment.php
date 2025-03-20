@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 require_once "common_functions.php";
@@ -8,19 +7,16 @@ require_once "db_connect.php";
 if(!isset($_SESSION['user_id'])){
     $_SESSION['ERROR'] = "You are not logged in!";
     header("Location: login.php");
+    exit;
 }
 
 if($_SERVER["REQUEST_METHOD"] == "POST") {
 
-//    foreach ($_POST as $bits) {  // temp code block to check form contents
-//        echo $bits;
-//        echo "<br>";
-//    }
-
-    if (valid_staff(dbconnect(), $_POST) && valid_appointment(dbconnect(), $_POST)) {  // checks to see if the staff picked matches the apt type wanted
+    if (valid_staff(dbconnect(), $_POST) && valid_appointment(dbconnect(), $_POST)  ) {  // checks to see if the staff picked matches the apt type wanted
         if(commit_booking(dbconnect(), $_POST)){
             $_SESSION['SUCCESS'] = "Appointment Booked Successfully!";
             header("Location: book_appointment.php");
+            exit;
         }
     } else {
         echo "<br> date and time is wrong <br>";

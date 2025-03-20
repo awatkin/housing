@@ -233,7 +233,7 @@ function valid_appointment($conn,$post){
             if(!$result && in_working_week($post['meeting-time'])){  // if no current bookings for this staff
                 return true;  // allow the booking to be made
             } elseif($result && in_working_week($post['meeting-time'])){
-
+                return true;
             } else {
                 return false;
             }
