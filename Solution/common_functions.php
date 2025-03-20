@@ -213,9 +213,11 @@ function valid_appointment($conn,$post){
             $stmt->bindParam(1, $post['staff_pick']);
             $stmt->execute(); //run the sql code
             $result = $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
+            $conn = null;
             if(!$result && in_working_week($post['meeting-time'])){  // if no current bookings for this staff
                 return true;  // allow the booking to be made
-            } elseif($result && in_working_week($post['meeting-time'])){
+            } elseif($result && in_working_week($post['meeting-time']) && booking_time_check($result,$post['meeting-time'])){
+                echo "last check";
                 return true;
             } else {
                 return false;
@@ -259,18 +261,19 @@ function in_working_week($datetimeLocalValue) {
 }
 
 
-function booking_time_check($selectedtime, $existingBookings) {
+function booking_time_check($existingBookings, $selectedtime) {
+
     $oneAndHalfHours = 5400; // 1.5 hours in seconds (90 minutes)
 
     foreach ($existingBookings as $existingBooking) {  // works through all of the bookings one at time
-        $existingEpoch = $existingBooking['booking_date']; // collects each booking date / time
+        $existingEpoch = $existingBooking['consult_date']; // collects each booking date / time
 
         // calcs the difference between the wanted and stored and if the time us less than 90 mins apart, cant use it
         if (abs($selectedtime - $existingEpoch) <= $oneAndHalfHours) {
-            return true; // Conflict found
+            return false; // Conflict found
         }
     }
-    return false; // No conflict found
+    return true; // No conflict found
 }
 
 
