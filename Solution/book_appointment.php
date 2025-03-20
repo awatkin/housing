@@ -12,7 +12,7 @@ if(!isset($_SESSION['user_id'])){
 
 if($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    if (valid_staff(dbconnect(), $_POST) && valid_appointment(dbconnect(), $_POST)  ) {  // checks to see if the staff picked matches the apt type wanted
+    if (valid_staff(dbconnect(), $_POST) && valid_appointment(dbconnect(), $_POST)) {  // checks to see if the staff picked matches the apt type wanted
         if(commit_booking(dbconnect(), $_POST)){
             $_SESSION['SUCCESS'] = "Appointment Booked Successfully!";
             header("Location: book_appointment.php");

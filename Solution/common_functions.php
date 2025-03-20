@@ -168,23 +168,6 @@ function get_time($choice){
     return $datetime_local_format;  // return the date to be used
 }
 
-function get_ticket_types($conn){
-    try {
-        $sql = "SELECT t_id, type FROM tickets"; //set up the sql statement
-        $stmt = $conn->prepare($sql); //prepares
-        $stmt->execute(); //run the sql code
-        $result = $stmt->fetchall(PDO::FETCH_ASSOC);  //brings back results
-
-        return $result;
-    }
-    catch (PDOException $e) { //catch error
-        // Log the error (crucial!)
-        error_log("Database error in get ticket type: " . $e->getMessage());
-        // Throw the exception
-        throw $e; // Re-throw the exception
-    }
-}
-
 function get_appt_staff($conn){
     try {
         $sql = "SELECT staff_id, f_name, s_name, role FROM staff"; //set up the sql statement
@@ -273,6 +256,21 @@ function in_working_week($datetimeLocalValue) {
     } else {
         return false; // Outside working hours
     }
+}
+
+
+function booking_time_check($selectedtime, $existingBookings) {
+    $oneAndHalfHours = 5400; // 1.5 hours in seconds (90 minutes)
+
+    foreach ($existingBookings as $existingBooking) {  // works through all of the bookings one at time
+        $existingEpoch = $existingBooking['booking_date']; // collects each booking date / time
+
+        // calcs the difference between the wanted and stored and if the time us less than 90 mins apart, cant use it
+        if (abs($selectedtime - $existingEpoch) <= $oneAndHalfHours) {
+            return true; // Conflict found
+        }
+    }
+    return false; // No conflict found
 }
 
 
